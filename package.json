@@ -1,0 +1,83 @@
+{
+    "name": "devops-lens",
+    "displayName": "DevOps Lens",
+    "description": "A Heads-Up Display (HUD) for your infrastructure - see Kubernetes context, AWS profile, Docker status, and Git branch at a glance",
+    "version": "1.0.0",
+    "publisher": "TughanbulutKurtulush",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/tuanbulut/devops-lens"
+    },
+    "categories": [
+        "Other",
+        "Visualization"
+    ],
+    "keywords": [
+        "kubernetes",
+        "docker",
+        "aws",
+        "git",
+        "devops",
+        "infrastructure",
+        "hud",
+        "production",
+        "safety",
+        "context"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./out/extension.js",
+    "icon": "resources/devops-lens-icon.png",
+    "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "devops-lens",
+                    "title": "DevOps Lens",
+                    "icon": "resources/devops-lens.svg"
+                }
+            ]
+        },
+        "views": {
+            "devops-lens": [
+                {
+                    "id": "devopsLensView",
+                    "name": "Infrastructure Status",
+                    "icon": "resources/devops-lens.svg"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "devopsLens.refresh",
+                "title": "Refresh DevOps Lens",
+                "icon": "$(refresh)"
+            }
+        ],
+        "menus": {
+            "view/title": [
+                {
+                    "command": "devopsLens.refresh",
+                    "when": "view == devopsLensView",
+                    "group": "navigation"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "package": "vsce package"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "@types/vscode": "^1.85.0",
+        "typescript": "^5.3.0",
+        "@vscode/vsce": "^2.22.0"
+    }
+}
