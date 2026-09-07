@@ -29,6 +29,7 @@ export function setupRealtimeWatchers(onRefresh: () => void): vscode.Disposable[
                     triggerDebouncedRefresh();
                 }
             });
+            watcher.on('error', () => {});
             disposables.push({ dispose: () => watcher.close() });
         }
     } catch {
@@ -45,6 +46,7 @@ export function setupRealtimeWatchers(onRefresh: () => void): vscode.Disposable[
                     triggerDebouncedRefresh();
                 }
             });
+            watcher.on('error', () => {});
             disposables.push({ dispose: () => watcher.close() });
         }
     } catch {

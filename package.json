@@ -33,6 +33,19 @@
         "azure"
     ],
     "activationEvents": [
+        "onView:devopsLensView",
+        "onCommand:devopsLens.refresh",
+        "onCommand:devopsLens.openHud",
+        "onCommand:devopsLens.openTerminal",
+        "onCommand:devopsLens.switchKubeContext",
+        "onCommand:devopsLens.switchKubeNamespace",
+        "onCommand:devopsLens.switchAwsProfile",
+        "onCommand:devopsLens.switchTerraformWorkspace",
+        "onCommand:devopsLens.dockerStart",
+        "onCommand:devopsLens.dockerStop",
+        "onCommand:devopsLens.dockerRestart",
+        "onCommand:devopsLens.dockerLogs",
+        "onCommand:devopsLens.dockerShell",
         "onStartupFinished"
     ],
     "main": "./out/extension.js",
