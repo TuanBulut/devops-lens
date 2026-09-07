@@ -4,8 +4,8 @@ import * as path from 'path';
 import * as os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import * as YAML from 'yaml';
 import { KubeStatus } from './types';
+import { parseKubeConfigYaml, ParsedKubeConfig } from './kubeConfigParser';
 
 const execAsync = promisify(exec);
 
@@ -30,34 +30,16 @@ export function isProductionContext(name: string | null | undefined, keywords?: 
     return checkKeywords.some(k => lower.includes(k.toLowerCase()));
 }
 
-interface ParsedKubeConfig {
-    'current-context'?: string;
-    contexts?: Array<{
-        name: string;
-        context: {
-            cluster?: string;
-            user?: string;
-            namespace?: string;
-        };
-    }>;
-    clusters?: Array<{
-        name: string;
-        cluster: {
-            server?: string;
-        };
-    }>;
-}
-
 export async function getKubernetesStatus(): Promise<KubeStatus> {
     const config = vscode.workspace.getConfiguration('devopsLens');
     const customKeywords = config.get<string[]>('productionKeywords', []);
 
-    // 1. First attempt: Direct ultra-fast parse of kubeconfig file (< 2ms)
+    // 1. First attempt: Direct ultra-fast zero-dependency parse of kubeconfig file (< 1ms)
     try {
         const kubePath = getKubeConfigPath();
         if (fs.existsSync(kubePath)) {
             const content = fs.readFileSync(kubePath, 'utf-8');
-            const parsed = YAML.parse(content) as ParsedKubeConfig;
+            const parsed = parseKubeConfigYaml(content);
 
             if (parsed && parsed['current-context']) {
                 const currentContextName = parsed['current-context'];
