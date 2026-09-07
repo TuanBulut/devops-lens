@@ -4,7 +4,7 @@
 See your Kubernetes cluster, active namespace, AWS profile, Docker containers, Terraform workspace, and Git branch at a single glance — with zero lag and interactive controls.
 
 [![VS Code](https://img.shields.io/badge/VS%20Code-Extension-007ACC?style=for-the-badge&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=TughanbulutKurtulush.devops-lens)
-[![Version](https://img.shields.io/badge/Version-2.0.1-blue?style=for-the-badge)](package.json)
+[![Version](https://img.shields.io/badge/Version-2.0.2-blue?style=for-the-badge)](package.json)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 ---
