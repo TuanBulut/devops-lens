@@ -2,7 +2,7 @@
     "name": "devops-lens",
     "displayName": "DevOps Lens",
     "description": "A Heads-Up Display (HUD) for your infrastructure - see Kubernetes context, AWS profile, Docker status, and Git branch at a glance",
-    "version": "2.0.2",
+    "version": "2.0.3",
     "publisher": "TughanbulutKurtulush",
     "engines": {
         "vscode": "^1.85.0"
@@ -64,7 +64,7 @@
             "devops-lens": [
                 {
                     "id": "devopsLensView",
-                    "name": "DevOps Infrastructure HUD",
+                    "name": "HUD",
                     "icon": "resources/devops-lens.svg"
                 }
             ]
@@ -224,6 +224,15 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Show the DevOps Lens Heads-Up Display (HUD) in the bottom Status Bar."
+                },
+                "devopsLens.statusBar.alignment": {
+                    "type": "string",
+                    "enum": [
+                        "right",
+                        "left"
+                    ],
+                    "default": "right",
+                    "description": "Position the DevOps Lens HUD on the right or left side of the bottom status bar."
                 },
                 "devopsLens.statusBar.showKubernetes": {
                     "type": "boolean",

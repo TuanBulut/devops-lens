@@ -295,11 +295,20 @@ export class DevOpsLensProvider implements vscode.TreeDataProvider<DevOpsLensIte
         tooltip.appendMarkdown(`- **Environment:** ${isProd ? '🔴 **PRODUCTION ACCOUNT**' : '⚪ Standard'}\n\n`);
         tooltip.appendMarkdown(`[Switch Profile](command:devopsLens.switchAwsProfile)`);
 
+        let cloudDescription = 'Not configured';
+        if (aws.profile) {
+            cloudDescription = `${aws.profile}${aws.region ? ` (@${aws.region})` : ''}`;
+        } else if (cloud.gcpProject) {
+            cloudDescription = `GCP: ${cloud.gcpProject}`;
+        } else if (cloud.azureSubscription) {
+            cloudDescription = `Azure: ${cloud.azureSubscription}`;
+        }
+
         return new DevOpsLensItem(
             'Cloud & AWS',
             children.length > 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None,
             {
-                description: aws.profile ? `${aws.profile}${aws.region ? ` (@${aws.region})` : ''}` : 'Not configured',
+                description: cloudDescription,
                 tooltip,
                 icon,
                 contextValue: 'awsRoot',

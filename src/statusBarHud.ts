@@ -5,11 +5,18 @@ export class StatusBarHud implements vscode.Disposable {
     private statusBarItem: vscode.StatusBarItem;
 
     constructor() {
+        const config = vscode.workspace.getConfiguration('devopsLens');
+        const alignmentSetting = config.get<string>('statusBar.alignment', 'right');
+        const alignment = alignmentSetting === 'left' ? vscode.StatusBarAlignment.Left : vscode.StatusBarAlignment.Right;
+
         this.statusBarItem = vscode.window.createStatusBarItem(
-            vscode.StatusBarAlignment.Left,
-            100 // High priority to sit near Git branch
+            alignment,
+            120 // Placed nicely in the status bar
         );
         this.statusBarItem.command = 'devopsLens.openHud';
+        this.statusBarItem.text = '$(dashboard) DevOps Lens';
+        this.statusBarItem.tooltip = 'DevOps Lens HUD — Click to open menu';
+        this.statusBarItem.show();
     }
 
     public update(status: InfrastructureStatus): void {
@@ -32,14 +39,29 @@ export class StatusBarHud implements vscode.Disposable {
         if (showK8s && status.kubernetes.context) {
             const k8sIcon = status.kubernetes.isProduction ? '$(error)' : '$(shield)';
             const ns = status.kubernetes.namespace ? `[${status.kubernetes.namespace}]` : '';
-            parts.push(`${k8sIcon} k8s:${status.kubernetes.context}${ns}`);
+            // Shorten long GKE/EKS cluster prefixes for clean status bar readability
+            let ctxDisplay = status.kubernetes.context;
+            if (ctxDisplay.includes('_')) {
+                const pieces = ctxDisplay.split('_');
+                ctxDisplay = pieces[pieces.length - 1];
+            } else if (ctxDisplay.includes('/')) {
+                const pieces = ctxDisplay.split('/');
+                ctxDisplay = pieces[pieces.length - 1];
+            }
+            parts.push(`${k8sIcon} ${ctxDisplay}${ns}`);
         }
 
-        // AWS segment
-        if (showAws && status.aws.profile) {
-            const awsIcon = status.aws.isProduction ? '$(alert)' : '$(cloud)';
-            const regionStr = status.aws.region ? `@${status.aws.region}` : '';
-            parts.push(`${awsIcon} aws:${status.aws.profile}${regionStr}`);
+        // Cloud segment (AWS, GCP, Azure)
+        if (showAws) {
+            if (status.aws.profile) {
+                const awsIcon = status.aws.isProduction ? '$(alert)' : '$(cloud)';
+                const regionStr = status.aws.region ? `@${status.aws.region}` : '';
+                parts.push(`${awsIcon} aws:${status.aws.profile}${regionStr}`);
+            } else if (status.cloud?.gcpProject) {
+                parts.push(`$(cloud) gcp:${status.cloud.gcpProject}`);
+            } else if (status.cloud?.azureSubscription) {
+                parts.push(`$(azure) az:${status.cloud.azureSubscription}`);
+            }
         }
 
         // Docker segment
