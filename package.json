@@ -2,7 +2,7 @@
     "name": "devops-lens",
     "displayName": "DevOps Lens",
     "description": "A Heads-Up Display (HUD) for your infrastructure - see Kubernetes context, AWS profile, Docker status, and Git branch at a glance",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "publisher": "TughanbulutKurtulush",
     "engines": {
         "vscode": "^1.85.0"
@@ -13,7 +13,9 @@
     },
     "categories": [
         "Other",
-        "Visualization"
+        "Visualization",
+        "Azure",
+        "Notebooks"
     ],
     "keywords": [
         "kubernetes",
@@ -25,7 +27,10 @@
         "hud",
         "production",
         "safety",
-        "context"
+        "context",
+        "terraform",
+        "gcp",
+        "azure"
     ],
     "activationEvents": [
         "onStartupFinished"
@@ -46,7 +51,7 @@
             "devops-lens": [
                 {
                     "id": "devopsLensView",
-                    "name": "Infrastructure Status",
+                    "name": "DevOps Infrastructure HUD",
                     "icon": "resources/devops-lens.svg"
                 }
             ]
@@ -54,30 +59,211 @@
         "commands": [
             {
                 "command": "devopsLens.refresh",
-                "title": "Refresh DevOps Lens",
+                "title": "DevOps Lens: Refresh Infrastructure Status",
                 "icon": "$(refresh)"
+            },
+            {
+                "command": "devopsLens.openHud",
+                "title": "DevOps Lens: Open Heads-Up Display (HUD)",
+                "icon": "$(dashboard)"
+            },
+            {
+                "command": "devopsLens.openTerminal",
+                "title": "DevOps Lens: Open Terminal with Environment",
+                "icon": "$(terminal)"
+            },
+            {
+                "command": "devopsLens.switchKubeContext",
+                "title": "DevOps Lens: Switch Kubernetes Context",
+                "icon": "$(arrow-swap)"
+            },
+            {
+                "command": "devopsLens.switchKubeNamespace",
+                "title": "DevOps Lens: Switch Kubernetes Namespace",
+                "icon": "$(symbol-namespace)"
+            },
+            {
+                "command": "devopsLens.switchAwsProfile",
+                "title": "DevOps Lens: Switch AWS Profile",
+                "icon": "$(arrow-swap)"
+            },
+            {
+                "command": "devopsLens.switchTerraformWorkspace",
+                "title": "DevOps Lens: Switch Terraform Workspace",
+                "icon": "$(arrow-swap)"
+            },
+            {
+                "command": "devopsLens.dockerStart",
+                "title": "Start Container",
+                "icon": "$(play)"
+            },
+            {
+                "command": "devopsLens.dockerStop",
+                "title": "Stop Container",
+                "icon": "$(debug-stop)"
+            },
+            {
+                "command": "devopsLens.dockerRestart",
+                "title": "Restart Container",
+                "icon": "$(sync)"
+            },
+            {
+                "command": "devopsLens.dockerLogs",
+                "title": "View Logs",
+                "icon": "$(output)"
+            },
+            {
+                "command": "devopsLens.dockerShell",
+                "title": "Exec Shell in Container",
+                "icon": "$(terminal)"
             }
         ],
         "menus": {
             "view/title": [
                 {
+                    "command": "devopsLens.openHud",
+                    "when": "view == devopsLensView",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "devopsLens.openTerminal",
+                    "when": "view == devopsLensView",
+                    "group": "navigation@2"
+                },
+                {
                     "command": "devopsLens.refresh",
                     "when": "view == devopsLensView",
-                    "group": "navigation"
+                    "group": "navigation@3"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "devopsLens.switchKubeContext",
+                    "when": "view == devopsLensView && viewItem == kubeRoot",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "devopsLens.switchKubeNamespace",
+                    "when": "view == devopsLensView && viewItem == kubeNamespaceItem",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "devopsLens.switchAwsProfile",
+                    "when": "view == devopsLensView && viewItem == awsRoot",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "devopsLens.dockerStart",
+                    "when": "view == devopsLensView && viewItem == dockerContainerStopped",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "devopsLens.dockerStop",
+                    "when": "view == devopsLensView && viewItem == dockerContainerRunning",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "devopsLens.dockerRestart",
+                    "when": "view == devopsLensView && viewItem == dockerContainerRunning",
+                    "group": "inline@2"
+                },
+                {
+                    "command": "devopsLens.dockerLogs",
+                    "when": "view == devopsLensView && (viewItem == dockerContainerRunning || viewItem == dockerContainerStopped)",
+                    "group": "inline@3"
+                },
+                {
+                    "command": "devopsLens.dockerShell",
+                    "when": "view == devopsLensView && viewItem == dockerContainerRunning",
+                    "group": "inline@4"
+                },
+                {
+                    "command": "devopsLens.switchTerraformWorkspace",
+                    "when": "view == devopsLensView && viewItem == terraformRoot",
+                    "group": "inline@1"
                 }
             ]
+        },
+        "configuration": {
+            "title": "DevOps Lens",
+            "properties": {
+                "devopsLens.refreshInterval": {
+                    "type": "number",
+                    "default": 30,
+                    "description": "Background polling interval in seconds (real-time file & Git watchers trigger immediately)."
+                },
+                "devopsLens.productionKeywords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [
+                        "prod",
+                        "production",
+                        "prd",
+                        "live",
+                        "main-cluster",
+                        "master-cluster"
+                    ],
+                    "description": "Keywords used to detect production Kubernetes clusters, AWS profiles, or Git branches."
+                },
+                "devopsLens.statusBar.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show the DevOps Lens Heads-Up Display (HUD) in the bottom Status Bar."
+                },
+                "devopsLens.statusBar.showKubernetes": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Include Kubernetes context in the Status Bar HUD."
+                },
+                "devopsLens.statusBar.showAws": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Include AWS profile in the Status Bar HUD."
+                },
+                "devopsLens.statusBar.showDocker": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Include Docker status in the Status Bar HUD."
+                },
+                "devopsLens.statusBar.showGit": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Include Git branch in the Status Bar HUD."
+                },
+                "devopsLens.enableTerraform": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable Terraform / OpenTofu workspace detection."
+                },
+                "devopsLens.enableMultiCloud": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable GCP project and Azure subscription detection."
+                },
+                "devopsLens.warnOnProductionTerminal": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Display a warning notification when opening an integrated terminal while connected to a production environment."
+                }
+            }
         }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
-        "package": "vsce package"
+        "package": "vsce package",
+        "test": "node test/suite/runTests.js"
     },
     "devDependencies": {
         "@types/node": "^20.10.0",
         "@types/vscode": "^1.85.0",
-        "typescript": "^5.3.0",
-        "@vscode/vsce": "^2.22.0"
+        "@vscode/vsce": "^2.22.0",
+        "typescript": "^5.3.0"
+    },
+    "dependencies": {
+        "yaml": "^2.3.4"
     }
 }

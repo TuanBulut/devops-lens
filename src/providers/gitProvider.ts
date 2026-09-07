@@ -1,49 +1,122 @@
 import * as vscode from 'vscode';
-
-export interface GitStatus {
-    branch: string | null;
-    isMainBranch: boolean;
-}
-
-// Branch names that should trigger a warning
-const MAIN_BRANCH_NAMES = ['main', 'master', 'trunk', 'develop'];
+import { GitStatus } from './types';
+import { isProductionContext } from './kubernetesProvider';
 
 export async function getGitStatus(): Promise<GitStatus> {
-    try {
-        // Try to get Git extension
-        const gitExtension = vscode.extensions.getExtension('vscode.git');
+    const config = vscode.workspace.getConfiguration('devopsLens');
+    const customKeywords = config.get<string[]>('productionKeywords', []);
 
+    try {
+        const gitExtension = vscode.extensions.getExtension('vscode.git');
         if (!gitExtension) {
-            return { branch: null, isMainBranch: false };
+            return getEmptyGitStatus();
         }
 
-        // Activate if needed
         const git = gitExtension.isActive
             ? gitExtension.exports
             : await gitExtension.activate();
 
         const api = git.getAPI(1);
-
         if (!api || api.repositories.length === 0) {
-            return { branch: null, isMainBranch: false };
+            return getEmptyGitStatus();
         }
 
-        // Get the first repository (primary workspace)
         const repo = api.repositories[0];
         const head = repo.state.HEAD;
 
         if (!head || !head.name) {
-            return { branch: null, isMainBranch: false };
+            return getEmptyGitStatus();
         }
 
         const branch = head.name;
-        const isMainBranch = MAIN_BRANCH_NAMES.includes(branch.toLowerCase());
+        const isMainBranch = ['main', 'master', 'trunk', 'production', 'prod'].includes(branch.toLowerCase()) ||
+            isProductionContext(branch, customKeywords);
+
+        const stagedCount = repo.state.indexChanges?.length || 0;
+        const unstagedCount = repo.state.workingTreeChanges?.length || 0;
+        const untrackedCount = repo.state.untrackedChanges?.length || 0;
+        const isClean = (stagedCount + unstagedCount + untrackedCount) === 0;
+
+        const ahead = head.ahead || 0;
+        const behind = head.behind || 0;
+
+        let lastCommit: { hash: string; message: string; author: string } | null = null;
+        if (head.commit) {
+            try {
+                const commits = await repo.log({ maxEntries: 1 });
+                if (commits && commits.length > 0) {
+                    lastCommit = {
+                        hash: commits[0].hash.substring(0, 7),
+                        message: commits[0].message.split('\n')[0],
+                        author: commits[0].authorName || ''
+                    };
+                }
+            } catch {
+                lastCommit = {
+                    hash: head.commit.substring(0, 7),
+                    message: '',
+                    author: ''
+                };
+            }
+        }
 
         return {
             branch,
-            isMainBranch
+            isMainBranch,
+            isClean,
+            stagedCount,
+            unstagedCount,
+            untrackedCount,
+            ahead,
+            behind,
+            lastCommit
         };
-    } catch (error) {
-        return { branch: null, isMainBranch: false };
+    } catch {
+        return getEmptyGitStatus();
     }
+}
+
+function getEmptyGitStatus(): GitStatus {
+    return {
+        branch: null,
+        isMainBranch: false,
+        isClean: true,
+        stagedCount: 0,
+        unstagedCount: 0,
+        untrackedCount: 0,
+        ahead: 0,
+        behind: 0,
+        lastCommit: null
+    };
+}
+
+export function subscribeToGitChanges(callback: () => void): vscode.Disposable[] {
+    const disposables: vscode.Disposable[] = [];
+    const gitExtension = vscode.extensions.getExtension('vscode.git');
+    if (!gitExtension) {
+        return disposables;
+    }
+
+    const setupListener = (gitApi: any) => {
+        if (!gitApi) {
+            return;
+        }
+        for (const repo of gitApi.repositories) {
+            disposables.push(repo.state.onDidChange(() => callback()));
+        }
+        disposables.push(gitApi.onDidOpenRepository((repo: any) => {
+            disposables.push(repo.state.onDidChange(() => callback()));
+            callback();
+        }));
+    };
+
+    if (gitExtension.isActive) {
+        setupListener(gitExtension.exports?.getAPI(1));
+    } else {
+        Promise.resolve(gitExtension.activate()).then(exports => {
+            setupListener(exports?.getAPI(1));
+        }).catch(() => {});
+    }
+
+    return disposables;
 }
