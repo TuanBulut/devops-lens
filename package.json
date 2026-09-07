@@ -2,7 +2,7 @@
     "name": "devops-lens",
     "displayName": "DevOps Lens",
     "description": "A Heads-Up Display (HUD) for your infrastructure - see Kubernetes context, AWS profile, Docker status, and Git branch at a glance",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "publisher": "TughanbulutKurtulush",
     "engines": {
         "vscode": "^1.85.0"
